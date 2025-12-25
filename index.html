@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ระบบวิเคราะห์ความเครียด</title>
+
+  <!-- Google Font (optional) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg1:#0ea5e9; /* sky */
+      --bg2:#a855f7; /* purple */
+      --bg3:#22c55e; /* green */
+      --ink:#0f172a;
+      --muted:#475569;
+      --card: rgba(255,255,255,.92);
+      --card2: rgba(255,255,255,.75);
+      --stroke: rgba(15,23,42,.12);
+      --shadow: 0 18px 45px rgba(2,6,23,.18);
+      --radius: 20px;
+    }
+
+    *{ box-sizing:border-box; }
+    html, body { height: 100%; }
+    body{
+      margin:0;
+      font-family: "Prompt", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 700px at 10% 10%, rgba(34,197,94,.35), transparent 55%),
+        radial-gradient(900px 600px at 80% 20%, rgba(168,85,247,.35), transparent 55%),
+        radial-gradient(900px 600px at 50% 90%, rgba(14,165,233,.30), transparent 55%),
+        linear-gradient(135deg, rgba(14,165,233,.18), rgba(168,85,247,.16));
+      overflow-x:hidden;
+    }
+
+    /* Top bar */
+    .topbar{
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(10px);
+      background: rgba(255,255,255,.55);
+      border-bottom: 1px solid rgba(15,23,42,.10);
+    }
+    .topbar-inner{
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 14px 16px;
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      font-weight: 800;
+      letter-spacing: .2px;
+    }
+    .logo{
+      width: 40px; height: 40px;
+      border-radius: 14px;
+      background: conic-gradient(from 120deg, var(--bg1), var(--bg2), var(--bg3), var(--bg1));
+      box-shadow: 0 10px 25px rgba(14,165,233,.25);
+      position: relative;
+    }
+    .logo:after{
+      content:"";
+      position:absolute;
+      inset: 8px;
+      border-radius: 10px;
+      background: rgba(255,255,255,.85);
+      box-shadow: inset 0 0 0 1px rgba(15,23,42,.10);
+    }
+    .brand small{ display:block; font-weight: 600; color: var(--muted); letter-spacing: 0; }
+
+    .nav{
+      display:flex;
+      gap:10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+    .chip{
+      text-decoration:none;
+      color: var(--ink);
+      padding: 10px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.70);
+      border: 1px solid rgba(15,23,42,.10);
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      font-weight: 700;
+      transition: transform .12s ease, box-shadow .12s ease;
+    }
+    .chip:hover{ transform: translateY(-1px); box-shadow: 0 10px 22px rgba(2,6,23,.10); }
+    .chip.active{
+      background: linear-gradient(90deg, rgba(14,165,233,.20), rgba(168,85,247,.20));
+      border-color: rgba(14,165,233,.35);
+    }
+
+    /* Layout */
+    .wrap{ max-width: 980px; margin: 0 auto; padding: 20px 16px 60px; }
+
+    .page{ display:none; }
+    .page.active{ display:block; }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 18px;
+    }
+    @media (max-width: 900px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    /* Cards */
+    .card{
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .card-head{
+      padding: 18px 18px 14px;
+      background:
+        radial-gradient(700px 180px at 10% 0%, rgba(14,165,233,.35), transparent 60%),
+        radial-gradient(700px 180px at 90% 0%, rgba(168,85,247,.30), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,.0));
+      border-bottom: 1px solid rgba(15,23,42,.08);
+    }
+    .card-title{
+      margin:0;
+      font-size: 20px;
+      font-weight: 800;
+      display:flex;
+      align-items:center;
+      gap: 10px;
+    }
+    .card-sub{ margin: 6px 0 0; color: var(--muted); font-weight: 400; }
+    .card-body{ padding: 18px; }
+
+    /* Hero */
+    .hero{
+      padding: 26px 18px 18px;
+      position: relative;
+    }
+    .hero h1{ margin:0; font-size: 30px; line-height: 1.15; }
+    .hero p{ margin: 10px 0 0; color: var(--muted); }
+    .hero-actions{ display:flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+
+    .btn{
+      cursor:pointer;
+      border: none;
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-weight: 800;
+      letter-spacing: .2px;
+      color: white;
+      background: linear-gradient(90deg, var(--bg1), var(--bg2));
+      box-shadow: 0 14px 30px rgba(14,165,233,.18);
+      transition: transform .12s ease, filter .12s ease;
+    }
+    .btn:hover{ transform: translateY(-1px); filter: brightness(1.02); }
+
+    .btn-ghost{
+      background: rgba(255,255,255,.78);
+      color: var(--ink);
+      border: 1px solid rgba(15,23,42,.10);
+      box-shadow: none;
+    }
+
+    /* Form */
+    .field{ margin-top: 14px; }
+    .label{ font-weight: 700; }
+    .hint{ margin: 6px 0 0; color: var(--muted); font-size: 13px; }
+    .input, select{
+      width: 100%;
+      margin-top: 8px;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(15,23,42,.12);
+      background: rgba(255,255,255,.85);
+      outline: none;
+      font-size: 15px;
+      transition: box-shadow .12s ease, border-color .12s ease;
+    }
+    .input:focus, select:focus{
+      border-color: rgba(14,165,233,.55);
+      box-shadow: 0 0 0 4px rgba(14,165,233,.16);
+    }
+
+    /* Result pills */
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      font-weight: 800;
+      border: 1px solid rgba(15,23,42,.10);
+      background: rgba(255,255,255,.85);
+    }
+    .pill.low{ border-color: rgba(34,197,94,.35); background: rgba(34,197,94,.12); }
+    .pill.mid{ border-color: rgba(245,158,11,.40); background: rgba(245,158,11,.14); }
+    .pill.high{ border-color: rgba(239,68,68,.40); background: rgba(239,68,68,.14); }
+
+    .result-box{
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(2,6,23,.04);
+      border: 1px solid rgba(15,23,42,.08);
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    /* Side card */
+    .mini{
+      background: var(--card2);
+      border: 1px solid rgba(15,23,42,.10);
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: 0 14px 28px rgba(2,6,23,.12);
+    }
+    .mini h3{ margin: 0 0 8px; font-size: 16px; }
+    .mini ul{ margin: 10px 0 0; padding-left: 18px; color: var(--muted); }
+
+    /* PSS stepper */
+    .step-row{
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 13px;
+    }
+    .bar{
+      height: 10px;
+      width: 100%;
+      background: rgba(15,23,42,.10);
+      border-radius: 999px;
+      overflow:hidden;
+      border: 1px solid rgba(15,23,42,.08);
+    }
+    .bar > div{
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--bg3), var(--bg1), var(--bg2));
+      border-radius: 999px;
+      transition: width .25s ease;
+    }
+
+    /* PSS illustration */
+    .pss-illus-wrap{
+      margin-top: 12px;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(15,23,42,.10);
+      background: rgba(255,255,255,.75);
+      box-shadow: 0 12px 26px rgba(2,6,23,.10);
+      /* keep container height synced with the image ratio */
+      aspect-ratio: 4 / 3;
+    }
+    .pss-illus{
+      width: 100%;
+      height: auto;
+      display:block;
+      object-fit: contain;
+      background: #fff;
+      opacity: 1;
+      transform: translateY(0);
+      transition: opacity .18s ease, transform .18s ease;
+    }
+    .pss-illus.bump{
+      opacity: .6;
+      transform: translateY(2px);
+    }
+    .pss-illus-caption{
+      padding: 10px 12px;
+      display:flex;
+      justify-content: space-between;
+      align-items:center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 13px;
+      border-top: 1px solid rgba(15,23,42,.08);
+    }
+    .tag{
+      font-weight: 800;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(15,23,42,.10);
+      background: rgba(255,255,255,.80);
+      color: var(--ink);
+      white-space: nowrap;
+    }
+
+    /* Footer note */
+    .note{
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px dashed rgba(15,23,42,.18);
+      background: rgba(255,255,255,.65);
+      color: var(--muted);
+      font-size: 13px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div class="brand">
+        <div class="logo" aria-hidden="true"></div>
+        <div>
+          Stress Analyzer
+          <small>ระบบวิเคราะห์ความเครียด (Demo)</small>
+        </div>
+      </div>
+
+      <div class="nav" aria-label="เมนู">
+        <a class="chip" href="#home" id="nav-home">🏠 หน้าแรก</a>
+        <a class="chip" href="#biometric" id="nav-biometric">💓 ประเมินค่าชีวภาพ</a>
+        <a class="chip" href="#pss" id="nav-pss">📝 แบบสอบถาม PSS</a>
+      </div>
+    </div>
+  </div>
+
+  <main class="wrap">
+    <!-- HOME PAGE -->
+    <section class="page" id="page-home">
+      <div class="card">
+        <div class="card-head hero">
+          <h1>วิเคราะห์ความเครียด<br/>จาก “ร่างกาย” และ “ความรู้สึก”</h1>
+          <p>
+            เลือกได้ 2 วิธี: (1) ประเมินค่าความดัน & ชีพจร (2) ทำแบบสอบถาม PSS-10 ทีละข้อ
+          </p>
+          <div class="hero-actions">
+            <a class="btn" href="#biometric">เริ่มประเมินค่าชีวภาพ</a>
+            <a class="btn btn-ghost" href="#pss">ทำแบบสอบถาม PSS</a>
+          </div>
+          <div class="note">
+            ⚠️ ผลลัพธ์นี้เป็น “การประเมินเบื้องต้นเพื่อการเรียนรู้” ไม่ใช่การวินิจฉัยทางการแพทย์
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div class="grid">
+            <div class="mini">
+              <h3>💓 ประเมินความเครียดทางกาย</h3>
+              <div style="color:var(--muted)">ใช้ค่าความดันบน/ล่าง และชีพจร เพื่อคำนวณคะแนนความเครียดแบบง่าย</div>
+              <ul>
+                <li>ชีพจรสูง → เพิ่มคะแนน</li>
+                <li>ความดันสูง → เพิ่มคะแนน</li>
+                <li>สรุปเป็น: ต่ำ/ปานกลาง/สูง</li>
+              </ul>
+            </div>
+
+            <div class="mini">
+              <h3>📝 แบบสอบถาม PSS-10</h3>
+              <div style="color:var(--muted)">ตอบคำถามทีละข้อ (10 ข้อ) และระบบรวมคะแนนให้อัตโนมัติ</div>
+              <ul>
+                <li>ตัวเลือก 1–4</li>
+                <li>หลัง “กดถัดไป” จะโชว์รูปตามคะแนนที่เลือก</li>
+                <li>สรุปคะแนนรวมเมื่อจบ</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BIOMETRIC PAGE -->
+    <section class="page" id="page-biometric">
+      <div class="card">
+        <div class="card-head">
+          <h2 class="card-title">💓 ระบบประเมินความเครียดทางกาย</h2>
+          <p class="card-sub">กรอกค่าความดัน & ชีพจร แล้วกด “วิเคราะห์”</p>
+        </div>
+
+        <div class="card-body">
+          <form id="stressForm" autocomplete="off">
+            <div class="field">
+              <div class="label">ค่าความดันบน (Systolic)</div>
+              <input class="input" type="number" id="systolic" min="50" max="260" placeholder="เช่น 120" required>
+              <div class="hint">หน่วย: mmHg</div>
+            </div>
+
+            <div class="field">
+              <div class="label">ค่าความดันล่าง (Diastolic)</div>
+              <input class="input" type="number" id="diastolic" min="30" max="160" placeholder="เช่น 80" required>
+              <div class="hint">หน่วย: mmHg</div>
+            </div>
+
+            <div class="field">
+              <div class="label">ชีพจร (Pulse)</div>
+              <input class="input" type="number" id="pulse" min="30" max="220" placeholder="เช่น 72" required>
+              <div class="hint">หน่วย: bpm</div>
+            </div>
+
+            <button class="btn" type="submit">วิเคราะห์</button>
+          </form>
+
+          <div class="result-box" id="bioResultBox" style="display:none;">
+            <div>
+              <div style="font-weight:800;">ผลประเมิน</div>
+              <div style="color:var(--muted); font-size:13px;" id="bioScoreLine"></div>
+            </div>
+            <div class="pill" id="bioPill">—</div>
+          </div>
+
+          <div class="note">
+            เกณฑ์คะแนนเป็นแบบ “ตัวอย่างเพื่อการเรียนรู้” คุณสามารถอธิบายใน Proposal ว่าเป็น rule-based scoring
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PSS PAGE -->
+    <section class="page" id="page-pss">
+      <div class="card">
+        <div class="card-head">
+          <h2 class="card-title">📝 แบบสอบถาม PSS (PSS-10)</h2>
+          <p class="card-sub">ตอบทีละข้อ (หน้าละข้อ) และหลัง “กดถัดไป” จะโชว์รูปตามคะแนนที่เลือก</p>
+        </div>
+
+        <div class="card-body">
+          <div class="step-row">
+            <div>ข้อ <span id="pss-q-num">1</span>/10</div>
+            <div style="min-width:160px; text-align:right;">ความคืบหน้า: <span id="pss-progress">10</span>%</div>
+          </div>
+          <div class="bar" aria-label="ความคืบหน้า">
+            <div id="pss-bar"></div>
+          </div>
+
+          <!-- Illustration that changes after clicking Next -->
+          <div class="pss-illus-wrap" aria-label="ภาพแสดงตามคะแนน">
+            <img id="pss-illus" class="pss-illus" alt="ภาพตามคะแนน" />
+            <div class="pss-illus-caption">
+              <div>ภาพจะเปลี่ยนตามคะแนนที่เลือกในข้อก่อนหน้า</div>
+              <div class="tag" id="pss-illus-tag">ยังไม่ได้เลือก</div>
+            </div>
+          </div>
+
+          <div style="margin-top:14px; font-weight:800; font-size:18px;" id="pss-question">
+            1) ในช่วงเดือนที่ผ่านมา คุณรู้สึกว่าควบคุมสิ่งที่เกิดขึ้นในชีวิตไม่ได้บ่อยแค่ไหน?
+          </div>
+
+          <form id="pssForm" style="margin-top:12px;" autocomplete="off">
+            <div class="field">
+              <div class="label">เลือกคำตอบ (1–4)</div>
+              <select class="input" id="pss-answer" required>
+                <option value="">-- กรุณาเลือก --</option>
+                <option value="1">1: ไม่เคยเลย</option>
+                <option value="2">2: นานๆ ครั้ง</option>
+                <option value="3">3: บ่อย</option>
+                <option value="4">4: บ่อยมาก</option>
+              </select>
+              <div class="hint">เลือก 1–4 ตามความถี่ในช่วง 1 เดือนที่ผ่านมา</div>
+            </div>
+
+            <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
+              <button class="btn btn-ghost" type="button" id="pssBackBtn" style="flex:1; min-width:160px;">ย้อนกลับ</button>
+              <button class="btn" type="submit" style="flex:1; min-width:160px;">ถัดไป</button>
+            </div>
+          </form>
+
+          <div class="result-box" id="pssResultBox" style="display:none;">
+            <div>
+              <div style="font-weight:800;">สรุปผล PSS</div>
+              <div style="color:var(--muted); font-size:13px;" id="pssScoreLine"></div>
+            </div>
+            <div class="pill" id="pssPill">—</div>
+          </div>
+
+          <div class="note">
+            ✅ ให้ใส่รูปไว้ในโฟลเดอร์ <b>images/</b> ข้างไฟล์ HTML แล้วตั้งชื่อไฟล์:
+            <br>- <b>images/pss_low.jpg</b> (สำหรับคะแนน 1–2)
+            <br>- <b>images/pss_high.jpg</b> (สำหรับคะแนน 3–4)
+            <br><span style="opacity:.85">ถ้าไม่พบรูป ระบบจะใช้ภาพสำรอง (SVG) ให้อัตโนมัติ</span>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    // -----------------------------
+    // Router (hash-based pages)
+    // -----------------------------
+    const pages = {
+      home: document.getElementById('page-home'),
+      biometric: document.getElementById('page-biometric'),
+      pss: document.getElementById('page-pss'),
+    };
+
+    const navMap = {
+      home: document.getElementById('nav-home'),
+      biometric: document.getElementById('nav-biometric'),
+      pss: document.getElementById('nav-pss'),
+    };
+
+    function setActive(pageKey){
+      Object.entries(pages).forEach(([k, el]) => el.classList.toggle('active', k === pageKey));
+      Object.entries(navMap).forEach(([k, el]) => el.classList.toggle('active', k === pageKey));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function readHash(){
+      const h = (location.hash || '#home').replace('#','').trim();
+      if (!pages[h]) return 'home';
+      return h;
+    }
+
+    window.addEventListener('hashchange', () => setActive(readHash()));
+    setActive(readHash());
+
+
+    // -----------------------------
+    // Biometric stress calculation
+    // -----------------------------
+    function estimateMentalStress(systolic, diastolic, pulse) {
+      let score = 0;
+      if (pulse > 100) score += 2;
+      else if (pulse > 90) score += 1;
+
+      if (systolic > 130 || diastolic > 85) score += 2;
+      else if (systolic > 120 || diastolic > 80) score += 1;
+
+      if (score >= 4) return { label: 'ความเครียดสูง', level: 'high', emoji: '🔴', score };
+      if (score >= 2) return { label: 'ความเครียดปานกลาง', level: 'mid', emoji: '🟠', score };
+      return { label: 'ความเครียดต่ำหรือปกติ', level: 'low', emoji: '🟢', score };
+    }
+
+    const bioResultBox = document.getElementById('bioResultBox');
+    const bioPill = document.getElementById('bioPill');
+    const bioScoreLine = document.getElementById('bioScoreLine');
+
+    document.getElementById('stressForm').addEventListener('submit', function(event) {
+      event.preventDefault();
+      const sys = parseInt(document.getElementById('systolic').value);
+      const dia = parseInt(document.getElementById('diastolic').value);
+      const pulse = parseInt(document.getElementById('pulse').value);
+
+      const res = estimateMentalStress(sys, dia, pulse);
+      bioScoreLine.textContent = `คะแนนรวม: ${res.score} (จากชีพจร/ความดัน)`;
+
+      bioPill.className = `pill ${res.level}`;
+      bioPill.textContent = `${res.emoji} ${res.label}`;
+
+      bioResultBox.style.display = 'flex';
+    });
+
+
+    // -----------------------------
+    // PSS Questionnaire (10 items)
+    // -----------------------------
+    const pssQuestions = [
+      'รู้สึกเพลีย/เหนื่อยจนไม่มีแรงจะทำอะไร',
+      'นอนไม่หลับเพราะคิดมากหรือกังวลใจ',
+      'กลัวความผิดพลาดในการทำสิ่งต่างๆ',
+      'รู้สึกหงุดหงิด รำคาญใจ กังวลกับเรื่องต่างๆ',
+      'ไม่อยากพบปะพูดคุยกับผู้คน',
+      'ทำอะไรก็ไม่ค่อยจะมีจุดมุ่งหมาย เพราะประสาทตึงเครียด',
+      'รู้สึกว่าตัวเองไม่ค่อยมีสมาธิ',
+      'รู้สึกไม่มีความสุขและเร้าใจในชีวิต',
+      'รู้สึกว่าชีวิตของตัวเองไม่มีคุณค่า',
+      'รู้สึกหมดหวังในชีวิตและอนาคต'
+    ];
+
+    // store answers so we can go back
+    let currentQ = 0;
+    let answers = new Array(10).fill(null);
+    let pendingAdvance = false;
+
+    const qNumEl = document.getElementById('pss-q-num');
+    const qTextEl = document.getElementById('pss-question');
+    const answerEl = document.getElementById('pss-answer');
+    const barEl = document.getElementById('pss-bar');
+    const progEl = document.getElementById('pss-progress');
+
+    const pssForm = document.getElementById('pssForm');
+    const backBtn = document.getElementById('pssBackBtn');
+    const submitBtn = pssForm.querySelector('button[type="submit"]');
+
+    const pssResultBox = document.getElementById('pssResultBox');
+    const pssPill = document.getElementById('pssPill');
+    const pssScoreLine = document.getElementById('pssScoreLine');
+
+    // Illustration elements
+    const pssIllusImg = document.getElementById('pss-illus');
+    const pssIllusTag = document.getElementById('pss-illus-tag');
+
+    // Your two images (put these files beside the HTML)
+    const PSS_IMG_LOW = 'images/pss_low.jpg';   // for score 1–2
+    const PSS_IMG_HIGH = 'images/pss_high.jpg'; // for score 3–4
+
+    // fallback SVG (if images not found)
+    function svgDataUri(svg){
+      return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    }
+
+    const FALLBACK_LOW = svgDataUri(`
+      <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600">
+        <defs>
+          <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#22c55e" stop-opacity="0.75"/>
+            <stop offset="1" stop-color="#0ea5e9" stop-opacity="0.55"/>
+          </linearGradient>
+        </defs>
+        <rect width="100%" height="100%" rx="36" fill="url(#g)"/>
+        <text x="50%" y="52%" font-size="180" text-anchor="middle">😌</text>
+        <text x="50%" y="84%" font-size="46" font-family="Arial" text-anchor="middle" fill="#0f172a">คะแนน 1–2</text>
+      </svg>`);
+
+    const FALLBACK_HIGH = svgDataUri(`
+      <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600">
+        <defs>
+          <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#ef4444" stop-opacity="0.70"/>
+            <stop offset="1" stop-color="#a855f7" stop-opacity="0.45"/>
+          </linearGradient>
+        </defs>
+        <rect width="100%" height="100%" rx="36" fill="url(#g)"/>
+        <text x="50%" y="52%" font-size="180" text-anchor="middle">😣</text>
+        <text x="50%" y="84%" font-size="46" font-family="Arial" text-anchor="middle" fill="#0f172a">คะแนน 3–4</text>
+      </svg>`);
+
+    function setIllustrationByScore(score){
+      // small animation bump
+      pssIllusImg.classList.add('bump');
+      setTimeout(() => pssIllusImg.classList.remove('bump'), 140);
+
+      const isLow = (score === 1 || score === 2);
+      const targetSrc = isLow ? PSS_IMG_LOW : PSS_IMG_HIGH;
+      const fallback = isLow ? FALLBACK_LOW : FALLBACK_HIGH;
+
+      pssIllusTag.textContent = isLow ? 'คะแนน 1–2' : 'คะแนน 3–4';
+
+      // load real image; if missing, fallback
+      pssIllusImg.onerror = () => {
+        pssIllusImg.onerror = null;
+        pssIllusImg.src = fallback;
+      };
+      pssIllusImg.src = targetSrc;
+    }
+
+    // initial illustration (neutral = low fallback)
+    pssIllusImg.src = FALLBACK_LOW;
+
+    function updatePssUI(){
+      qNumEl.textContent = (currentQ + 1);
+      qTextEl.textContent = `${currentQ + 1}) ${pssQuestions[currentQ]}`;
+
+      // restore previous answer if exists
+      answerEl.value = (answers[currentQ] === null) ? '' : String(answers[currentQ]);
+
+      const pct = Math.round(((currentQ + 1) / 10) * 100);
+      progEl.textContent = pct;
+      barEl.style.width = `${pct}%`;
+
+      backBtn.disabled = currentQ === 0;
+      backBtn.style.opacity = backBtn.disabled ? .55 : 1;
+      backBtn.style.cursor = backBtn.disabled ? 'not-allowed' : 'pointer';
+
+      // reset per-question flow
+      pendingAdvance = false;
+      submitBtn.textContent = 'ถัดไป';
+    }
+
+    function computeTotal(){
+      // scores are 1–4, so total range is 10–40
+      return answers.reduce((sum, v) => sum + (typeof v === 'number' ? v : 0), 0);
+    }
+
+    function showPssSummary(){
+      const total = computeTotal();
+
+      // Demo interpretation (10–40). Adjust as your teacher requires.
+      let level = 'low', label = 'ความเครียดต่ำ', emoji = '🟢';
+      if (total >= 31) { level = 'high'; label = 'ความเครียดสูง'; emoji = '🔴'; }
+      else if (total >= 21) { level = 'mid'; label = 'ความเครียดปานกลาง'; emoji = '🟠'; }
+
+      pssScoreLine.textContent = `คะแนนรวม: ${total} (10–40)`;
+      pssPill.className = `pill ${level}`;
+      pssPill.textContent = `${emoji} ${label}`;
+
+      pssForm.style.display = 'none';
+      pssResultBox.style.display = 'flex';
+    }
+
+    // เมื่อกด “ถัดไป” รอบแรก: แค่แสดงภาพตามคะแนนที่เลือก รอบสอง: เปลี่ยนคำถาม
+    pssForm.addEventListener('submit', function(e){
+      e.preventDefault();
+      const v = parseInt(answerEl.value);
+      if (Number.isNaN(v)) return;
+      if (v < 1 || v > 4) return;
+
+      if (!pendingAdvance) {
+        // ✅ รอบแรก: แสดงภาพตามคะแนนที่เราเลือก แล้วยังอยู่ที่คำถามเดิม
+        setIllustrationByScore(v);
+        answers[currentQ] = v;
+        pendingAdvance = true;
+        submitBtn.textContent = 'ไปข้อถัดไป';
+        return;
+      }
+
+      // รอบสอง: เดินหน้าข้อถัดไปหรือสรุปผล
+      answers[currentQ] = v;
+      pendingAdvance = false;
+      submitBtn.textContent = 'ถัดไป';
+
+      if (currentQ < 9) {
+        currentQ += 1;
+        updatePssUI();
+      } else {
+        showPssSummary();
+      }
+    });
+
+    backBtn.addEventListener('click', function(){
+      if (currentQ === 0) return;
+      currentQ -= 1;
+      pendingAdvance = false;
+      submitBtn.textContent = 'ถัดไป';
+      updatePssUI();
+    });
+
+    updatePssUI();
+
+    // -----------------------------
+    // Optional: if you want illustration to reflect the previously saved answer
+    // when user navigates back/forward, you can uncomment below.
+    // -----------------------------
+    // const originalUpdate = updatePssUI;
+    // updatePssUI = function(){
+    //   originalUpdate();
+    //   const prev = answers[currentQ];
+    //   if (typeof prev === 'number') setIllustrationByScore(prev);
+    // };
+
+  </script>
+</body>
+</html>
