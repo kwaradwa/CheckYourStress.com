@@ -490,7 +490,8 @@
 
           <div class="note">
             ✅ ให้ใส่รูปไว้ในโฟลเดอร์ <b>images/</b> ข้างไฟล์ HTML แล้วตั้งชื่อไฟล์:
-            <br>- <b>images/opt1.jpg</b> ถึง <b>images/opt4.jpg</b> (ใช้ภาพชุดเดียวกันทุกข้อ)
+            <br>- <b>images/q1_low.jpg</b> ถึง <b>images/q10_low.jpg</b> (ภาพเริ่มต้นก่อนเลือกคำตอบ)
+            <br>- <b>images/opt1.jpg</b> ถึง <b>images/opt4.jpg</b> (ภาพเมื่อเลือกคำตอบ 1–4 ใช้ร่วมทุกข้อ)
             <br>- <b>images/pss_result_low.jpg</b>, <b>images/pss_result_mid.jpg</b>, <b>images/pss_result_high.jpg</b> (ภาพสรุปตอนจบ)
             <br><span style="opacity:.85">ถ้าไม่พบรูป ระบบจะใช้ภาพสำรอง (SVG) ให้อัตโนมัติ</span>
           </div>
@@ -610,15 +611,33 @@
       high: 'images/pss_result_high.jpg'
     };
 
-    const PSS_IMG_EXT = 'jpg';
+    function getPssLowPath(qIndex){
+      return `images/q${qIndex + 1}_low.jpg`;
+    }
 
-    function getPssImagePath(option){
-      return `images/opt${option}.${PSS_IMG_EXT}`;
+    function getPssOptPath(option){
+      return `images/opt${option}.jpg`;
     }
 
     // fallback SVG (if images not found)
     function svgDataUri(svg){
       return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+    }
+
+    function fallbackSvgForQuestionLow(qNum){
+      const tone = '#22c55e';
+      return svgDataUri(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600">
+          <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="${tone}" stop-opacity="0.55"/>
+              <stop offset="1" stop-color="#0ea5e9" stop-opacity="0.35"/>
+            </linearGradient>
+          </defs>
+          <rect width="100%" height="100%" rx="36" fill="url(#g)"/>
+          <text x="50%" y="52%" font-size="140" text-anchor="middle">📝</text>
+          <text x="50%" y="84%" font-size="46" font-family="Arial" text-anchor="middle" fill="#0f172a">ข้อ ${qNum} (เริ่มต้น)</text>
+        </svg>`);
     }
 
     function fallbackSvgForOption(qNum, option){
@@ -640,21 +659,6 @@
           <rect width="100%" height="100%" rx="36" fill="url(#g)"/>
           <text x="50%" y="52%" font-size="140" text-anchor="middle">📝</text>
           <text x="50%" y="84%" font-size="46" font-family="Arial" text-anchor="middle" fill="#0f172a">ข้อ ${qNum} (ตัวเลือก ${option})</text>
-        </svg>`);
-    }
-
-    function fallbackSvgForPending(qNum){
-      return svgDataUri(`
-        <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600">
-          <defs>
-            <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stop-color="#cbd5f1" stop-opacity="0.75"/>
-              <stop offset="1" stop-color="#e2e8f0" stop-opacity="0.75"/>
-            </linearGradient>
-          </defs>
-          <rect width="100%" height="100%" rx="36" fill="url(#g)"/>
-          <text x="50%" y="52%" font-size="90" text-anchor="middle">✨</text>
-          <text x="50%" y="75%" font-size="40" font-family="Arial" text-anchor="middle" fill="#0f172a">เลือกคำตอบเพื่อดูภาพ (ข้อ ${qNum})</text>
         </svg>`);
     }
 
@@ -680,7 +684,7 @@
       pssIllusImg.classList.add('bump');
       setTimeout(() => pssIllusImg.classList.remove('bump'), 140);
 
-      const targetSrc = getPssImagePath(score);
+      const targetSrc = getPssOptPath(score);
       const fallback = fallbackSvgForOption(qIndex + 1, score);
 
       pssIllusTag.textContent = `ข้อ ${qIndex + 1} • ตัวเลือก ${score}`;
@@ -697,9 +701,16 @@
       pssIllusImg.classList.add('bump');
       setTimeout(() => pssIllusImg.classList.remove('bump'), 140);
 
-      pssIllusTag.textContent = 'ยังไม่ได้เลือก';
-      pssIllusImg.onerror = null;
-      pssIllusImg.src = fallbackSvgForPending(qIndex + 1);
+      const targetSrc = getPssLowPath(qIndex);
+      const fallback = fallbackSvgForQuestionLow(qIndex + 1);
+
+      pssIllusTag.textContent = `ข้อ ${qIndex + 1} • ค่าเริ่มต้น`;
+
+      pssIllusImg.onerror = () => {
+        pssIllusImg.onerror = null;
+        pssIllusImg.src = fallback;
+      };
+      pssIllusImg.src = targetSrc;
     }
 
     function setIllustrationByResult(level){
@@ -822,4 +833,5 @@
   </script>
 </body>
 </html>
+
 
