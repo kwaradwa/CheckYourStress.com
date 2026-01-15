@@ -375,7 +375,7 @@
               <div style="color:var(--muted)">ตอบคำถามทีละข้อ (10 ข้อ) และระบบรวมคะแนนให้อัตโนมัติ</div>
               <ul>
                 <li>ตัวเลือก 1–4</li>
-                <li>หลัง “กดถัดไป” จะโชว์รูปตามคะแนนที่เลือก</li>
+                <li>เมื่อเลือกคำตอบ รูปจะเปลี่ยนทันที</li>
                 <li>สรุปคะแนนรวมเมื่อจบ</li>
               </ul>
             </div>
@@ -435,7 +435,7 @@
       <div class="card">
         <div class="card-head">
           <h2 class="card-title">📝 แบบสอบถาม PSS (PSS-10)</h2>
-          <p class="card-sub">ตอบทีละข้อ (หน้าละข้อ) และหลัง “กดถัดไป” จะโชว์รูปตามคะแนนที่เลือก</p>
+          <p class="card-sub">ตอบทีละข้อ (หน้าละข้อ) และรูปจะเปลี่ยนทันทีเมื่อเลือกคำตอบ</p>
         </div>
 
         <div class="card-body">
@@ -452,7 +452,7 @@
             <img id="pss-illus" class="pss-illus" alt="ภาพตามคะแนน" />
             <div class="pss-illus-caption" 
             >
-              <div>ภาพจะเปลี่ยนตามคะแนนที่เลือกในข้อก่อนหน้า</div>
+              <div>ภาพจะเปลี่ยนทันทีเมื่อเลือกคำตอบของข้อนี้</div>
               <div class="tag" id="pss-illus-tag">ยังไม่ได้เลือก</div>
             </div>
           </div>
@@ -659,6 +659,21 @@
         </svg>`);
     }
 
+    function fallbackSvgForPending(qNum){
+      return svgDataUri(`
+        <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600">
+          <defs>
+            <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#cbd5f1" stop-opacity="0.75"/>
+              <stop offset="1" stop-color="#e2e8f0" stop-opacity="0.75"/>
+            </linearGradient>
+          </defs>
+          <rect width="100%" height="100%" rx="36" fill="url(#g)"/>
+          <text x="50%" y="52%" font-size="90" text-anchor="middle">✨</text>
+          <text x="50%" y="75%" font-size="40" font-family="Arial" text-anchor="middle" fill="#0f172a">เลือกคำตอบเพื่อดูภาพ (ข้อ ${qNum})</text>
+        </svg>`);
+    }
+
     function fallbackSvgForResult(level){
       const tone = level === 'high' ? '#ef4444' : (level === 'mid' ? '#f59e0b' : '#22c55e');
       const label = level === 'high' ? 'สูง' : (level === 'mid' ? 'ปานกลาง' : 'ต่ำ');
@@ -696,6 +711,15 @@
       pssIllusImg.src = targetSrc;
     }
 
+    function setIllustrationPending(qIndex){
+      pssIllusImg.classList.add('bump');
+      setTimeout(() => pssIllusImg.classList.remove('bump'), 140);
+
+      pssIllusTag.textContent = 'ยังไม่ได้เลือก';
+      pssIllusImg.onerror = null;
+      pssIllusImg.src = fallbackSvgForPending(qIndex + 1);
+    }
+
     function setIllustrationByResult(level){
       // small animation bump
       pssIllusImg.classList.add('bump');
@@ -713,8 +737,8 @@
       pssIllusImg.src = targetSrc;
     }
 
-    // initial illustration (neutral = low fallback)
-    pssIllusImg.src = fallbackSvgForQuestion(1, 'low');
+    // initial illustration (pending)
+    setIllustrationPending(0);
 
     function updatePssUI(){
       qNumEl.textContent = (currentQ + 1);
@@ -730,6 +754,13 @@
       backBtn.disabled = currentQ === 0;
       backBtn.style.opacity = backBtn.disabled ? .55 : 1;
       backBtn.style.cursor = backBtn.disabled ? 'not-allowed' : 'pointer';
+
+      const prev = answers[currentQ];
+      if (typeof prev === 'number') {
+        setIllustrationByQuestionScore(currentQ, prev);
+      } else {
+        setIllustrationPending(currentQ);
+      }
     }
 
     function computeTotal(){
@@ -755,7 +786,17 @@
       pssResultBox.style.display = 'flex';
     }
 
-    // เมื่อกด “ถัดไป” ให้แสดงภาพตามคะแนนที่เลือก (1–2 หรือ 3–4) แล้วค่อยเปลี่ยนคำถาม
+    // เมื่อเลือกคำตอบ ให้แสดงภาพทันที แล้วค่อยไปข้อถัดไปตอนกด “ถัดไป”
+    answerEl.addEventListener('change', function(){
+      const v = parseInt(answerEl.value);
+      if (Number.isNaN(v)) {
+        setIllustrationPending(currentQ);
+        return;
+      }
+      if (v < 1 || v > 4) return;
+      setIllustrationByQuestionScore(currentQ, v);
+    });
+
     pssForm.addEventListener('submit', function(e){
       e.preventDefault();
       const v = parseInt(answerEl.value);
@@ -799,3 +840,4 @@
   </script>
 </body>
 </html>
+
