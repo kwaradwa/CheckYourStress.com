@@ -490,8 +490,7 @@
 
           <div class="note">
             ✅ ให้ใส่รูปไว้ในโฟลเดอร์ <b>images/</b> ข้างไฟล์ HTML แล้วตั้งชื่อไฟล์:
-            <br>- <b>images/q1_low.jpg</b> ถึง <b>images/q10_low.jpg</b> (คะแนน 1–2 ตามลำดับข้อ)
-            <br>- <b>images/q1_high.jpg</b> ถึง <b>images/q10_high.jpg</b> (คะแนน 3–4 ตามลำดับข้อ)
+            <br>- <b>images/opt1.jpg</b> ถึง <b>images/opt4.jpg</b> (ใช้ภาพชุดเดียวกันทุกข้อ)
             <br>- <b>images/pss_result_low.jpg</b>, <b>images/pss_result_mid.jpg</b>, <b>images/pss_result_high.jpg</b> (ภาพสรุปตอนจบ)
             <br><span style="opacity:.85">ถ้าไม่พบรูป ระบบจะใช้ภาพสำรอง (SVG) ให้อัตโนมัติ</span>
           </div>
@@ -605,46 +604,31 @@
     const pssIllusImg = document.getElementById('pss-illus');
     const pssIllusTag = document.getElementById('pss-illus-tag');
 
-    // One image per question by score (put these files beside the HTML)
-    const PSS_IMG_LOW_BY_Q = [
-      'images/q1_low.jpg',
-      'images/q2_low.jpg',
-      'images/q3_low.jpg',
-      'images/q4_low.jpg',
-      'images/q5_low.jpg',
-      'images/q6_low.jpg',
-      'images/q7_low.jpg',
-      'images/q8_low.jpg',
-      'images/q9_low.jpg',
-      'images/q10_low.jpg'
-    ];
-
-    const PSS_IMG_HIGH_BY_Q = [
-      'images/q1_high.jpg',
-      'images/q2_high.jpg',
-      'images/q3_high.jpg',
-      'images/q4_high.jpg',
-      'images/q5_high.jpg',
-      'images/q6_high.jpg',
-      'images/q7_high.jpg',
-      'images/q8_high.jpg',
-      'images/q9_high.jpg',
-      'images/q10_high.jpg'
-    ];
-
     const PSS_RESULT_IMG = {
       low: 'images/pss_result_low.jpg',
       mid: 'images/pss_result_mid.jpg',
       high: 'images/pss_result_high.jpg'
     };
 
+    const PSS_IMG_EXT = 'jpg';
+
+    function getPssImagePath(option){
+      return `images/opt${option}.${PSS_IMG_EXT}`;
+    }
+
     // fallback SVG (if images not found)
     function svgDataUri(svg){
       return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
     }
 
-    function fallbackSvgForQuestion(qNum, level){
-      const tone = level === 'high' ? '#ef4444' : '#22c55e';
+    function fallbackSvgForOption(qNum, option){
+      const tones = {
+        1: '#22c55e',
+        2: '#84cc16',
+        3: '#f59e0b',
+        4: '#ef4444'
+      };
+      const tone = tones[option] || '#94a3b8';
       return svgDataUri(`
         <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600">
           <defs>
@@ -655,7 +639,7 @@
           </defs>
           <rect width="100%" height="100%" rx="36" fill="url(#g)"/>
           <text x="50%" y="52%" font-size="140" text-anchor="middle">📝</text>
-          <text x="50%" y="84%" font-size="46" font-family="Arial" text-anchor="middle" fill="#0f172a">ข้อ ${qNum} (${level})</text>
+          <text x="50%" y="84%" font-size="46" font-family="Arial" text-anchor="middle" fill="#0f172a">ข้อ ${qNum} (ตัวเลือก ${option})</text>
         </svg>`);
     }
 
@@ -696,12 +680,10 @@
       pssIllusImg.classList.add('bump');
       setTimeout(() => pssIllusImg.classList.remove('bump'), 140);
 
-      const isLow = (score === 1 || score === 2);
-      const targetSrc = isLow ? PSS_IMG_LOW_BY_Q[qIndex] : PSS_IMG_HIGH_BY_Q[qIndex];
-      const level = isLow ? 'low' : 'high';
-      const fallback = fallbackSvgForQuestion(qIndex + 1, level);
+      const targetSrc = getPssImagePath(score);
+      const fallback = fallbackSvgForOption(qIndex + 1, score);
 
-      pssIllusTag.textContent = `ข้อ ${qIndex + 1}`;
+      pssIllusTag.textContent = `ข้อ ${qIndex + 1} • ตัวเลือก ${score}`;
 
       // load real image; if missing, fallback
       pssIllusImg.onerror = () => {
