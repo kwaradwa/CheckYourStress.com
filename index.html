@@ -196,6 +196,59 @@
       border-color: rgba(14,165,233,.55);
       box-shadow: 0 0 0 4px rgba(14,165,233,.16);
     }
+    .opt-grid{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 10px;
+    }
+    @media (max-width: 640px){
+      .opt-grid{ grid-template-columns: 1fr; }
+    }
+    .opt-card{
+      position: relative;
+      display:block;
+      padding: 8px;
+      border-radius: 16px;
+      border: 1px solid rgba(15,23,42,.12);
+      background: rgba(255,255,255,.85);
+      cursor: pointer;
+      transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+    }
+    .opt-card:hover{
+      transform: translateY(-1px);
+      box-shadow: 0 10px 22px rgba(2,6,23,.08);
+    }
+    .opt-card input{
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+    .opt-card-body{
+      display:flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 6px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+    }
+    .opt-card input:checked + .opt-card-body{
+      border-color: rgba(14,165,233,.55);
+      box-shadow: 0 0 0 4px rgba(14,165,233,.16);
+      background: rgba(14,165,233,.06);
+    }
+    .opt-card img{
+      width: 100%;
+      height: 140px;
+      object-fit: cover;
+      border-radius: 12px;
+      border: 1px solid rgba(15,23,42,.10);
+      background: #fff;
+    }
+    .opt-card-text{
+      font-weight: 700;
+      color: var(--ink);
+    }
 
     /* Result pills */
     .pill{
@@ -464,14 +517,37 @@
           <form id="pssForm" style="margin-top:12px;" autocomplete="off">
             <div class="field">
               <div class="label">เลือกคำตอบ (1–4)</div>
-              <select class="input" id="pss-answer" required>
-                <option value="">-- กรุณาเลือก --</option>
-                <option value="1">1: ไม่เคยเลย</option>
-                <option value="2">2: นานๆ ครั้ง</option>
-                <option value="3">3: บ่อย</option>
-                <option value="4">4: บ่อยมาก</option>
-              </select>
-              <div class="hint">เลือก 1–4 ตามความถี่ในช่วง 1 เดือนที่ผ่านมา</div>
+              <div class="opt-grid" id="pss-option-grid" role="radiogroup" aria-label="ตัวเลือกคำตอบ">
+                <label class="opt-card">
+                  <input type="radio" name="pss-option" value="1">
+                  <div class="opt-card-body">
+                    <img src="images/opt1.jpg" alt="ตัวเลือก 1" data-opt="1" />
+                    <div class="opt-card-text">1: ไม่เคยเลย</div>
+                  </div>
+                </label>
+                <label class="opt-card">
+                  <input type="radio" name="pss-option" value="2">
+                  <div class="opt-card-body">
+                    <img src="images/opt2.jpg" alt="ตัวเลือก 2" data-opt="2" />
+                    <div class="opt-card-text">2: นานๆ ครั้ง</div>
+                  </div>
+                </label>
+                <label class="opt-card">
+                  <input type="radio" name="pss-option" value="3">
+                  <div class="opt-card-body">
+                    <img src="images/opt3.jpg" alt="ตัวเลือก 3" data-opt="3" />
+                    <div class="opt-card-text">3: บ่อย</div>
+                  </div>
+                </label>
+                <label class="opt-card">
+                  <input type="radio" name="pss-option" value="4">
+                  <div class="opt-card-body">
+                    <img src="images/opt4.jpg" alt="ตัวเลือก 4" data-opt="4" />
+                    <div class="opt-card-text">4: บ่อยมาก</div>
+                  </div>
+                </label>
+              </div>
+              <div class="hint">แตะที่การ์ดเพื่อเลือก (1–4) ตามความถี่ในช่วง 1 เดือนที่ผ่านมา</div>
             </div>
 
             <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;">
@@ -590,7 +666,6 @@
 
     const qNumEl = document.getElementById('pss-q-num');
     const qTextEl = document.getElementById('pss-question');
-    const answerEl = document.getElementById('pss-answer');
     const barEl = document.getElementById('pss-bar');
     const progEl = document.getElementById('pss-progress');
 
@@ -604,6 +679,8 @@
     // Illustration elements
     const pssIllusImg = document.getElementById('pss-illus');
     const pssIllusTag = document.getElementById('pss-illus-tag');
+    const optionInputs = Array.from(document.querySelectorAll('input[name="pss-option"]'));
+    const optionImages = Array.from(document.querySelectorAll('.opt-card img[data-opt]'));
 
     const PSS_RESULT_IMG = {
       low: 'images/pss_result_low.jpg',
@@ -660,6 +737,27 @@
           <text x="50%" y="52%" font-size="140" text-anchor="middle">📝</text>
           <text x="50%" y="84%" font-size="46" font-family="Arial" text-anchor="middle" fill="#0f172a">ข้อ ${qNum} (ตัวเลือก ${option})</text>
         </svg>`);
+    }
+
+    function getSelectedOption(){
+      const checked = optionInputs.find((input) => input.checked);
+      return checked ? parseInt(checked.value) : null;
+    }
+
+    function setSelectedOption(value){
+      optionInputs.forEach((input) => {
+        input.checked = value !== null && parseInt(input.value) === value;
+      });
+    }
+
+    function setupOptionImageFallback(){
+      optionImages.forEach((img) => {
+        const opt = parseInt(img.dataset.opt);
+        img.onerror = () => {
+          img.onerror = null;
+          img.src = fallbackSvgForOption(currentQ + 1, opt);
+        };
+      });
     }
 
     function fallbackSvgForResult(level){
@@ -737,9 +835,6 @@
       qNumEl.textContent = (currentQ + 1);
       qTextEl.textContent = `${currentQ + 1}) ${pssQuestions[currentQ]}`;
 
-      // restore previous answer if exists
-      answerEl.value = (answers[currentQ] === null) ? '' : String(answers[currentQ]);
-
       const pct = Math.round(((currentQ + 1) / 10) * 100);
       progEl.textContent = pct;
       barEl.style.width = `${pct}%`;
@@ -751,8 +846,10 @@
       const prev = answers[currentQ];
       if (typeof prev === 'number') {
         setIllustrationByQuestionScore(currentQ, prev);
+        setSelectedOption(prev);
       } else {
         setIllustrationPending(currentQ);
+        setSelectedOption(null);
       }
     }
 
@@ -780,20 +877,25 @@
     }
 
     // เมื่อเลือกคำตอบ ให้แสดงภาพทันที แล้วค่อยไปข้อถัดไปตอนกด “ถัดไป”
-    answerEl.addEventListener('change', function(){
-      const v = parseInt(answerEl.value);
-      if (Number.isNaN(v)) {
-        setIllustrationPending(currentQ);
-        return;
-      }
-      if (v < 1 || v > 4) return;
-      setIllustrationByQuestionScore(currentQ, v);
+    optionInputs.forEach((input) => {
+      input.addEventListener('change', function(){
+        const v = parseInt(input.value);
+        if (Number.isNaN(v)) return;
+        if (v < 1 || v > 4) return;
+        answers[currentQ] = v;
+        setIllustrationByQuestionScore(currentQ, v);
+      });
     });
+
+    setupOptionImageFallback();
 
     pssForm.addEventListener('submit', function(e){
       e.preventDefault();
-      const v = parseInt(answerEl.value);
-      if (Number.isNaN(v)) return;
+      const v = getSelectedOption();
+      if (v === null || Number.isNaN(v)) {
+        setIllustrationPending(currentQ);
+        return;
+      }
       if (v < 1 || v > 4) return;
 
       // ✅ แสดงภาพตามคะแนนที่เราเลือก
@@ -833,5 +935,7 @@
   </script>
 </body>
 </html>
+
+
 
 
