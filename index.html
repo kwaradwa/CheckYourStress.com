@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ระบบวิเคราะห์ความเครียด</title>
+  <title>เว็บไซต์เครื่องมือวัดความเครียดของนักเรียน (เบื้องต้น)</title>
 
   <!-- Google Font (optional) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -381,7 +381,7 @@
         <div class="logo" aria-hidden="true"></div>
         <div>
           Stress Analyzer
-          <small>ระบบวิเคราะห์ความเครียด (Demo)</small>
+          <small>เว็บไซต์เครื่องมือวัดความเครียดของนักเรียน (เบื้องต้น)</small>
         </div>
       </div>
 
@@ -475,9 +475,6 @@
             </div>
             <div class="pill" id="bioPill">—</div>
           </div>
-
-          <div class="note">
-            เกณฑ์คะแนนเป็นแบบ “ตัวอย่างเพื่อการเรียนรู้” คุณสามารถอธิบายใน Proposal ว่าเป็น rule-based scoring
           </div>
         </div>
       </div>
@@ -563,13 +560,6 @@
             </div>
             <div class="pill" id="pssPill">—</div>
           </div>
-
-          <div class="note">
-            ✅ ให้ใส่รูปไว้ในโฟลเดอร์ <b>images/</b> ข้างไฟล์ HTML แล้วตั้งชื่อไฟล์:
-            <br>- <b>images/q1_low.jpg</b> ถึง <b>images/q10_low.jpg</b> (ภาพเริ่มต้นก่อนเลือกคำตอบ)
-            <br>- <b>images/opt1.jpg</b> ถึง <b>images/opt4.jpg</b> (ภาพเมื่อเลือกคำตอบ 1–4 ใช้ร่วมทุกข้อ)
-            <br>- <b>images/pss_result_low.jpg</b>, <b>images/pss_result_mid.jpg</b>, <b>images/pss_result_high.jpg</b> (ภาพสรุปตอนจบ)
-            <br><span style="opacity:.85">ถ้าไม่พบรูป ระบบจะใช้ภาพสำรอง (SVG) ให้อัตโนมัติ</span>
           </div>
         </div>
       </div>
@@ -619,9 +609,8 @@
       if (systolic > 130 || diastolic > 85) score += 2;
       else if (systolic > 120 || diastolic > 80) score += 1;
 
-      if (score >= 4) return { label: 'ความเครียดสูง', level: 'high', emoji: '🔴', score };
-      if (score >= 2) return { label: 'ความเครียดปานกลาง', level: 'mid', emoji: '🟠', score };
-      return { label: 'ความเครียดต่ำหรือปกติ', level: 'low', emoji: '🟢', score };
+      if (score >= 2) return { label: 'มีโอกาสเครียด', level: 'mid', emoji: '🟠', score };
+      return { label: 'ไม่มีความเครียด', level: 'low', emoji: '🟢', score };
     }
 
     const bioResultBox = document.getElementById('bioResultBox');
